@@ -141,7 +141,7 @@ Execute sempre:
 npm run dist
 ```
 
-Esse comando executa `npm run build` e depois gera novamente o aplicativo portátil Windows. O resultado atualizado fica em `release/Senses-Car-Controle-<versão>.exe` e em uma pasta `release-rebuild-<n>/win-unpacked/`. Feche qualquer instância antiga do Senses Car antes de testar e abra o arquivo `Abrir Senses Car.cmd` ou o novo `.exe`. Verifique a data/hora do arquivo para confirmar que está usando o rebuild atual.
+Esse comando executa `npm run build` e depois gera novamente o aplicativo portátil Windows. O resultado atualizado fica em `release/Senses-Car-Controle-<versão>.exe` e em `release/win-unpacked/`. Feche qualquer instância antiga do Senses Car antes de testar e abra o arquivo `Abrir Senses Car.cmd` ou o novo `.exe`. Verifique a data/hora do arquivo para confirmar que está usando o rebuild atual.
 
 `npm run build` sozinho serve apenas para validar o bundle da interface; ele não atualiza o executável que está na pasta `release` e, portanto, não substitui `npm run dist`.
 
@@ -153,10 +153,10 @@ No aplicativo empacotado, a verificação ocorre automaticamente alguns segundos
 
 O workflow `.github/workflows/release.yml` é executado a cada push na branch `main` e também pode ser iniciado manualmente. Ele incrementa o patch do `package.json`, cria uma tag `vX.Y.Z`, gera o instalador NSIS e o portátil Windows e publica ambos, junto com `latest.yml`, no GitHub Release. O workflow usa apenas `GITHUB_TOKEN` com permissão `contents: write`; nenhum token é incluído no aplicativo.
 
-Para habilitar o fluxo em outro repositório, mantenha o remote `origin` apontando para o repositório GitHub e envie as alterações para `main`:
+O repositório oficial é [diangelisoliveira/App-Senses-Car](https://github.com/diangelisoliveira/App-Senses-Car). Para habilitar o fluxo em outro repositório, mantenha o remote `origin` apontando para o repositório GitHub e envie as alterações para `main`:
 
 ```bash
-git remote add origin https://github.com/<organização-ou-usuário>/senses-car-controle.git
+git remote add origin https://github.com/diangelisoliveira/App-Senses-Car.git
 git branch -M main
 git push -u origin main
 ```

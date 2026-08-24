@@ -5,6 +5,10 @@
   "main": "electron/main.cjs",
   "author": "Senses Car",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diangelisoliveira/App-Senses-Car.git"
+  },
   "private": true,
   "scripts": {
     "dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron .\"",
@@ -72,6 +76,8 @@
     "publish": [
       {
         "provider": "github",
+        "owner": "diangelisoliveira",
+        "repo": "App-Senses-Car",
         "releaseType": "release",
         "publishAutoUpdate": true
       }
