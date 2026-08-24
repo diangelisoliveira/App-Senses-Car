@@ -151,7 +151,7 @@ O projeto usa o `electron-updater` com Releases públicos do GitHub. O empacotam
 
 No aplicativo empacotado, a verificação ocorre automaticamente alguns segundos depois da abertura e é repetida periodicamente. O botão **Buscar atualizações** no cabeçalho permite iniciar a verificação manualmente. Quando uma versão é encontrada, o download é feito automaticamente; depois, o botão muda para **Reiniciar e atualizar**. Os dados locais permanecem na pasta de dados do usuário durante a atualização.
 
-O workflow `.github/workflows/release.yml` é executado a cada push na branch `main` e também pode ser iniciado manualmente. Ele incrementa o patch do `package.json`, cria uma tag `vX.Y.Z`, gera o instalador NSIS e o portátil Windows e publica ambos, junto com `latest.yml`, no GitHub Release. O workflow usa apenas `GITHUB_TOKEN` com permissão `contents: write`; nenhum token é incluído no aplicativo.
+O workflow `.github/workflows/release.yml` é executado a cada push na branch `main` e também pode ser iniciado manualmente. Ele instala o pnpm no runner, incrementa o patch do `package.json`, cria uma tag `vX.Y.Z`, gera o instalador NSIS e o portátil Windows e publica ambos, junto com `latest.yml`, no GitHub Release. O workflow usa apenas `GITHUB_TOKEN` com permissão `contents: write`; nenhum token é incluído no aplicativo.
 
 O repositório oficial é [diangelisoliveira/App-Senses-Car](https://github.com/diangelisoliveira/App-Senses-Car). Para habilitar o fluxo em outro repositório, mantenha o remote `origin` apontando para o repositório GitHub e envie as alterações para `main`:
 
