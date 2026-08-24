@@ -51,6 +51,36 @@ jobs:
           git push origin "HEAD:${{ github.ref_name }}" --follow-tags
           "APP_VERSION=$version" >> $env:GITHUB_ENV
 
+      - name: Aguardar propagação da tag
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "v$env:APP_VERSION"
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $tagUrl = "https://api.github.com/repos/${{ github.repository }}/git/ref/tags/$tag"
+          $tagFound = $false
+          for ($attempt = 1; $attempt -le 12; $attempt++) {
+            try {
+              $tagInfo = Invoke-RestMethod -Uri $tagUrl -Headers $headers -Method Get
+              if ($tagInfo.ref -eq "refs/tags/$tag") {
+                $tagFound = $true
+                break
+              }
+            } catch {
+              # A API pode levar alguns segundos para propagar a tag recém-enviada.
+            }
+            Start-Sleep -Seconds 5
+          }
+          if (-not $tagFound) {
+            throw "A tag $tag não ficou disponível na API do GitHub dentro do tempo esperado."
+          }
+          Start-Sleep -Seconds 10
+
       - name: Gerar e publicar instalador e versão portátil
         run: pnpm run dist:publish
         env:
