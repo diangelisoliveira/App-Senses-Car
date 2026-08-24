@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole, LogOut, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Download, Eye, EyeOff, LockKeyhole, LogOut, RefreshCw, ShieldCheck } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import authBackground from './visuals/auth-blue-automotive.png';
 import authPanelBackground from './visuals/auth-blue-automotive.png';
@@ -26,6 +26,67 @@ const getRedirectUrl = () => {
   }
   return undefined;
 };
+
+const updateIsBlockingLogin = (state = {}, updaterAvailable = Boolean(window.sensesCar?.updates)) => {
+  if (!updaterAvailable) return false;
+  return !['not-available', 'dev'].includes(state.status || 'idle');
+};
+
+const updateGateDetail = (state = {}) => {
+  const status = state.status || 'idle';
+  if (status === 'checking') return 'Verificando se existe uma versão mais recente...';
+  if (status === 'available') return `Nova versão ${state.availableVersion || ''} encontrada. O download será iniciado antes do login.`;
+  if (status === 'downloading') return `Baixando a versão ${state.availableVersion || 'mais recente'}...`;
+  if (status === 'downloaded') return `A versão ${state.availableVersion || 'nova'} está pronta. Reinicie para liberar o acesso.`;
+  if (status === 'installing') return 'Instalando a atualização e reiniciando o aplicativo...';
+  if (status === 'not-available') return 'Sistema atualizado. O acesso está liberado.';
+  if (status === 'error') return 'Não foi possível confirmar a versão. Tente buscar novamente antes de entrar.';
+  if (status === 'dev') return 'Disponível somente no aplicativo empacotado.';
+  return 'Clique para confirmar e atualizar o sistema antes de entrar.';
+};
+
+function AuthUpdateCenter({ state = {}, blocked = false, onCheck, onDownload, onInstall, dark = false }) {
+  const status = state.status || 'idle';
+  const progress = Math.max(0, Math.min(100, Number(state.percent) || 0));
+  const isBusy = ['checking', 'downloading', 'installing'].includes(status);
+  const isDev = status === 'dev' || status === 'unavailable';
+  const action = status === 'downloaded' ? onInstall : status === 'available' ? onDownload : onCheck;
+  const Icon = status === 'available' ? Download : RefreshCw;
+  const label = status === 'downloaded'
+    ? 'Reiniciar e atualizar'
+    : status === 'available'
+      ? 'Baixar atualização'
+      : status === 'checking'
+        ? 'Verificando...'
+        : status === 'downloading'
+          ? `Baixando ${progress}%`
+          : status === 'installing'
+            ? 'Instalando...'
+            : 'Buscar atualizações';
+  const detail = updateGateDetail(state);
+
+  return (
+    <section className={`auth-update-panel ${blocked ? 'is-required' : ''} ${dark ? 'auth-update-panel--dark' : ''}`} aria-label="Atualizações do sistema">
+      <div className="auth-update-panel__copy">
+        <span className="auth-update-panel__eyebrow"><RefreshCw size={13} /> ATUALIZAÇÃO DO SISTEMA</span>
+        <strong>{blocked ? 'Atualize antes de entrar' : 'Versão do sistema'}</strong>
+        <p role={blocked ? 'alert' : 'status'}>{detail}</p>
+      </div>
+      <button
+        type="button"
+        className={`auth-update-panel__button ${status === 'downloaded' ? 'is-ready' : ''}`}
+        onClick={action}
+        disabled={isBusy || isDev}
+        aria-busy={isBusy}
+        title={detail}
+      >
+        <Icon size={16} className={isBusy ? 'update-icon-spin' : ''} />
+        {label}
+      </button>
+      {blocked && <small>O login será liberado somente depois que o sistema estiver atualizado.</small>}
+    </section>
+  );
+}
 
 const friendlyAuthError = (error) => {
   const message = String(error?.message || '').toLowerCase();
@@ -72,7 +133,15 @@ function AuthMessage({ message }) {
   );
 }
 
-function AuthScreen({ initialMode = 'login', onRecovered }) {
+function AuthScreen({
+  initialMode = 'login',
+  onRecovered,
+  updateState = {},
+  updateRequired = false,
+  onCheckForUpdates,
+  onDownloadUpdate,
+  onInstallUpdate,
+}) {
   const [mode, setMode] = useState(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -97,6 +166,12 @@ function AuthScreen({ initialMode = 'login', onRecovered }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (mode === 'login' && updateRequired) {
+      setMessage({ type: 'error', text: 'Atualize o sistema antes de fazer login.' });
+      return;
+    }
+
     setBusy(true);
     setMessage(null);
 
@@ -211,6 +286,14 @@ function AuthScreen({ initialMode = 'login', onRecovered }) {
           aria-hidden="true"
         />
 
+        <AuthUpdateCenter
+          state={updateState}
+          blocked={updateRequired}
+          onCheck={onCheckForUpdates}
+          onDownload={onDownloadUpdate}
+          onInstall={onInstallUpdate}
+        />
+
         <form className="auth-reference-form" onSubmit={handleSubmit}>
           <label className="auth-reference-field">
             <span>E-mail profissional</span>
@@ -256,8 +339,9 @@ function AuthScreen({ initialMode = 'login', onRecovered }) {
           <button
             className="auth-reference-submit"
             type="submit"
-            disabled={busy}
+            disabled={busy || updateRequired}
             aria-busy={busy}
+            aria-disabled={updateRequired}
           >
             <span className="visually-hidden">{busy ? 'Aguarde...' : submitLabel}</span>
           </button>
@@ -416,10 +500,128 @@ function AuthScreen({ initialMode = 'login', onRecovered }) {
   );
 }
 
+function UpdateRequiredScreen({ state, onCheck, onDownload, onInstall, onSignOut }) {
+  return (
+    <main className="access-pending-screen update-required-screen">
+      <section className="access-pending-card">
+        <RefreshCw size={32} />
+        <span className="auth-card__eyebrow">ATUALIZAÇÃO OBRIGATÓRIA</span>
+        <h1>Atualize o sistema para entrar.</h1>
+        <p>Esta versão não pode acessar o aplicativo até que a atualização seja concluída.</p>
+        <AuthUpdateCenter
+          state={state}
+          blocked
+          onCheck={onCheck}
+          onDownload={onDownload}
+          onInstall={onInstall}
+          dark
+        />
+        <button type="button" className="auth-link-button access-pending-card__logout" onClick={onSignOut}>
+          <LogOut size={15} /> Sair
+        </button>
+      </section>
+    </main>
+  );
+}
+
 export default function AuthGate({ children }) {
   const [session, setSession] = useState(undefined);
   const [recovery, setRecovery] = useState(false);
   const [accessState, setAccessState] = useState({ loading: false, profile: null, unitAccess: [], error: null });
+  const updates = typeof window !== 'undefined' ? window.sensesCar?.updates : undefined;
+  const updaterAvailable = Boolean(updates);
+  const [updateState, setUpdateState] = useState(() => ({
+    status: updaterAvailable ? 'checking' : 'dev',
+    version: '',
+  }));
+
+  const checkForUpdates = async () => {
+    if (!updates) return null;
+
+    setUpdateState((current) => ({ ...current, status: 'checking' }));
+    try {
+      const result = await updates.check();
+      if (result) setUpdateState((current) => ({ ...current, ...result }));
+      return result;
+    } catch (error) {
+      setUpdateState((current) => ({
+        ...current,
+        status: 'error',
+        message: error?.message || String(error),
+      }));
+      return null;
+    }
+  };
+
+  const downloadUpdate = async () => {
+    if (!updates) return null;
+
+    setUpdateState((current) => ({ ...current, status: 'downloading' }));
+    try {
+      const result = await updates.download();
+      if (result) setUpdateState((current) => ({ ...current, ...result }));
+      return result;
+    } catch (error) {
+      setUpdateState((current) => ({
+        ...current,
+        status: 'error',
+        message: error?.message || String(error),
+      }));
+      return null;
+    }
+  };
+
+  const installUpdate = async () => {
+    if (!updates) return null;
+
+    setUpdateState((current) => ({ ...current, status: 'installing' }));
+    try {
+      const result = await updates.install();
+      if (result) setUpdateState((current) => ({ ...current, ...result }));
+      return result;
+    } catch (error) {
+      setUpdateState((current) => ({
+        ...current,
+        status: 'error',
+        message: error?.message || String(error),
+      }));
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (!updates) return undefined;
+
+    let mounted = true;
+    const unsubscribe = updates.onStatus((nextState) => {
+      if (mounted && nextState) setUpdateState(nextState);
+    });
+
+    const initializeUpdates = async () => {
+      try {
+        const currentState = await updates.state();
+        if (mounted && currentState) setUpdateState(currentState);
+        if (mounted) await checkForUpdates();
+      } catch (error) {
+        if (mounted) {
+          setUpdateState((current) => ({
+            ...current,
+            status: 'error',
+            message: error?.message || String(error),
+          }));
+        }
+      }
+    };
+
+    void initializeUpdates();
+
+    return () => {
+      mounted = false;
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  const updateRequired = updateIsBlockingLogin(updateState, updaterAvailable);
 
   useEffect(() => {
     let mounted = true;
@@ -538,10 +740,42 @@ export default function AuthGate({ children }) {
   }
 
   if (recovery) {
-    return <AuthScreen initialMode="recovery" onRecovered={() => setRecovery(false)} />;
+    return (
+      <AuthScreen
+        initialMode="recovery"
+        onRecovered={() => setRecovery(false)}
+        updateState={updateState}
+        updateRequired={false}
+        onCheckForUpdates={checkForUpdates}
+        onDownloadUpdate={downloadUpdate}
+        onInstallUpdate={installUpdate}
+      />
+    );
   }
 
-  if (!session) return <AuthScreen />;
+  if (!session) {
+    return (
+      <AuthScreen
+        updateState={updateState}
+        updateRequired={updateRequired}
+        onCheckForUpdates={checkForUpdates}
+        onDownloadUpdate={downloadUpdate}
+        onInstallUpdate={installUpdate}
+      />
+    );
+  }
+
+  if (updateRequired) {
+    return (
+      <UpdateRequiredScreen
+        state={updateState}
+        onCheck={checkForUpdates}
+        onDownload={downloadUpdate}
+        onInstall={installUpdate}
+        onSignOut={() => supabase.auth.signOut()}
+      />
+    );
+  }
 
   if (accessState.loading) {
     return (
