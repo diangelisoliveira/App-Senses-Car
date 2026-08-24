@@ -174,6 +174,8 @@ O `pnpm-workspace.yaml` autoriza o script de build do `electron-winstaller`, nec
 
 O pacote portátil Windows é entregue como `release/Senses-Car-Controle-<versão>.exe` e o instalador como `release/Senses-Car-Controle-<versão>-Setup.exe`. Após cada modificação, esse comando deve ser executado novamente. Para executar a versão descompactada atualizada, abra `release/win-unpacked/Senses Car.exe` ou use o arquivo `Abrir Senses Car.cmd`. A pasta inteira deve ser mantida junta ao copiar a versão descompactada para outra máquina Windows 64 bits.
 
+O `Abrir Senses Car.cmd` usa primeiro `release/win-unpacked/Senses Car.exe` e, se essa pasta não existir, seleciona automaticamente o portátil mais recente disponível em `release/`, sem depender de um número de versão fixo.
+
 Para apenas validar a compilação da interface:
 
 ```bash
