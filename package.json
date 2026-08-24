@@ -1,6 +1,6 @@
 {
   "name": "senses-car-controle",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Controle local de passagens e kits de higienizacao da Senses Car",
   "main": "electron/main.cjs",
   "author": "Senses Car",
