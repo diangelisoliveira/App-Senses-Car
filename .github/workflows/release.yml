@@ -81,7 +81,24 @@ jobs:
           }
           Start-Sleep -Seconds 10
 
-      - name: Gerar e publicar instalador e versão portátil
-        run: pnpm run dist:publish
+      - name: Gerar instaladores Windows
+        shell: pwsh
+        run: |
+          pnpm run build
+          pnpm exec electron-builder --win --publish never
+
+      - name: Criar Release e enviar artefatos
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = $env:APP_VERSION
+          $tag = "v$version"
+          gh release create $tag `
+            "release\Senses-Car-Controle-$version-Setup.exe" `
+            "release\Senses-Car-Controle-$version-Setup.exe.blockmap" `
+            "release\Senses-Car-Controle-$version.exe" `
+            "release\latest.yml" `
+            --title "Senses Car v$version" `
+            --notes "Release automático do aplicativo Senses Car Controle." `
+            --latest
