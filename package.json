@@ -1,0 +1,80 @@
+{
+  "name": "senses-car-controle",
+  "version": "1.0.1",
+  "description": "Controle local de passagens e kits de higienizacao da Senses Car",
+  "main": "electron/main.cjs",
+  "author": "Senses Car",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron .\"",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "dist": "npm run build && electron-builder --win",
+    "dist:publish": "npm run build && electron-builder --win --publish always",
+    "dist:dir": "npm run build && electron-builder --win dir"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.57.2",
+    "@vitejs/plugin-react": "latest",
+    "electron-updater": "^6.8.9",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "vite": "latest",
+    "xlsx": "latest"
+  },
+  "devDependencies": {
+    "concurrently": "latest",
+    "electron": "latest",
+    "electron-builder": "latest",
+    "wait-on": "latest"
+  },
+  "build": {
+    "appId": "br.com.sensescar.controle",
+    "productName": "Senses Car",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "data/**/*",
+      "build/senses-car-icon.png",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/senses-car-icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "Senses-Car-Controle-${version}-Setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "shortcutName": "Senses Car Controle"
+    },
+    "portable": {
+      "artifactName": "Senses-Car-Controle-${version}.${ext}",
+      "requestExecutionLevel": "user"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "releaseType": "release",
+        "publishAutoUpdate": true
+      }
+    ]
+  }
+}

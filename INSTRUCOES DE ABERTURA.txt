@@ -1,0 +1,11 @@
+SENSES CAR CONTROLE
+
+Para abrir o aplicativo:
+
+1. Abra a pasta release.
+2. Abra a pasta win-unpacked.
+3. Dê duplo clique em Senses Car.exe.
+
+Atalho: também é possível dar duplo clique em "Abrir Senses Car.cmd" na pasta principal.
+
+O aplicativo funciona offline. Não mova o arquivo Senses Car.exe para fora da pasta release\\win-unpacked, pois ele precisa dos arquivos ao redor para funcionar.
